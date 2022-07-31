@@ -16,7 +16,16 @@ io.on("connection", (socket) => {
   socket.roomId = roomId;
   socket.join(roomId);
 
-  socket.emit("connected");
+  socket.emit("core:connected");
+
+  socket.on("core:connected-data", (payload) => {
+    io.in(socket.roomId).emit("chat-user:connected", {
+      socketId: socket.id,
+      senderId: payload.id,
+      senderName: payload.name,
+    });
+    console.log("a user send connect-data", payload.name);
+  });
 
   socket.on("message:send", (payload) => {
     io.in(socket.roomId).emit("message:receive", payload);
@@ -24,6 +33,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    io.in(socket.roomId).emit("chat-user:disconnected", {
+      socketId: socket.id,
+    });
     socket.leave(roomId);
 
     console.log("a user disconnected", socket.id);
